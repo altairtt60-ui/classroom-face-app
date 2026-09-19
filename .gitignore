@@ -1,0 +1,15 @@
+.venv/
+__pycache__/
+*.py[cod]
+.env
+*.db
+*.sqlite3
+data/cadets/*
+data/embeddings/*
+models/*
+!data/cadets/.gitkeep
+!data/embeddings/.gitkeep
+!models/.gitkeep
+.pytest_cache/
+node_modules/
+dist/
