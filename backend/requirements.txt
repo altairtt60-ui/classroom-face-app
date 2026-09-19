@@ -5,7 +5,7 @@ numpy>=1.26,<3
 pydantic-settings>=2.5,<3
 python-multipart>=0.0.9,<1
 sqlalchemy>=2.0,<3
-# Install these after the camera/API skeleton is verified:
-# ultralytics
-# boxmot
-# insightface
+ultralytics>=8.3,<9
+boxmot>=13,<14
+insightface>=0.7,<1
+onnxruntime>=1.18,<2

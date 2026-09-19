@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="kk">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Classroom Face App</title>
+  <style>
+    :root { font-family: Inter, Arial, sans-serif; color: #e7edf5; background: #0c1420; }
+    body { margin: 0; } main { max-width: 1200px; margin: auto; padding: 24px; }
+    header { display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; }
+    .grid { display:grid; grid-template-columns: 2fr 1fr; gap:20px; }
+    .card { background:#142235; border:1px solid #263b54; border-radius:14px; padding:18px; }
+    img { width:100%; aspect-ratio:16/9; object-fit:contain; background:#08101b; border-radius:10px; }
+    input, button { width:100%; box-sizing:border-box; padding:11px; margin:6px 0; border-radius:8px; border:1px solid #3a526e; background:#0b1726; color:#fff; }
+    button { background:#2f80ed; border:0; cursor:pointer; font-weight:600; } button.secondary { background:#29435d; }
+    .row { display:flex; gap:8px; } .row > * { flex:1; }
+    .muted { color:#9eb1c7; font-size:13px; } .status { margin-top:10px; min-height:24px; }
+    li { margin:7px 0; color:#cdd9e7; }
+    @media(max-width:850px){ .grid{grid-template-columns:1fr;} }
+  </style>
+</head>
+<body>
+<main>
+  <header><div><h1>Classroom Face App</h1><div class="muted">Камераға тәуелсіз локалды басқару панелі</div></div><button class="secondary" style="width:auto" onclick="refresh()">Жаңарту</button></header>
+  <div class="grid">
+    <section class="card">
+      <h2>Live камера</h2>
+      <img id="stream" alt="Камера stream" />
+      <div class="row"><button onclick="startCamera()">Камераны іске қосу</button><button class="secondary" onclick="stopCamera()">Тоқтату</button></div>
+      <div id="cameraStatus" class="status muted">Күйі тексерілмеді</div>
+      <h3>Камера көзі</h3>
+      <p class="muted">0 — моноблок/USB; rtsp://... — IP; mp4 жолы — видео файл.</p>
+      <input id="source" value="0" placeholder="0 немесе rtsp://..." />
+      <button class="secondary" onclick="saveCamera()">Камера көзін сақтау</button>
+    </section>
+    <section class="card">
+      <h2>Курсант қосу</h2>
+      <form id="cadetForm">
+        <input name="student_code" required placeholder="Курсант ID" />
+        <input name="full_name" required placeholder="Аты-жөні" />
+        <input name="group_name" placeholder="Тобы" />
+        <input name="photo" required type="file" accept="image/jpeg,image/png,image/webp" />
+        <button>Фото және профиль қосу</button>
+      </form>
+      <div id="formStatus" class="status"></div>
+      <h3>Тіркелген курсанттар</h3>
+      <ul id="cadets"></ul>
+    </section>
+  </div>
+</main>
+<script>
+const api = '/api';
+async function refresh(){
+  const [cadets, status] = await Promise.all([fetch(api+'/cadets').then(r=>r.json()), fetch(api+'/camera/status').then(r=>r.json())]);
+  document.getElementById('cadets').innerHTML = cadets.map(c=>`<li><b>${c.full_name}</b><br><span class="muted">${c.student_code} · ${c.group_name || 'Топ көрсетілмеген'}</span></li>`).join('') || '<li>Әзірге курсант жоқ</li>';
+  document.getElementById('cameraStatus').textContent = `running=${status.running}; tracks=${(status.tracks||[]).length}`;
+}
+async function startCamera(){ await fetch(api+'/camera/start',{method:'POST'}); document.getElementById('stream').src=api+'/camera/stream?ts='+Date.now(); refresh(); }
+async function stopCamera(){ await fetch(api+'/camera/stop',{method:'POST'}); document.getElementById('stream').removeAttribute('src'); refresh(); }
+async function saveCamera(){ const source=document.getElementById('source').value; await fetch(api+'/camera/config?source='+encodeURIComponent(source),{method:'POST'}); document.getElementById('formStatus').textContent='Камера көзі сақталды'; }
+document.getElementById('cadetForm').addEventListener('submit', async (e)=>{ e.preventDefault(); const form=new FormData(e.target); const r=await fetch(api+'/cadets',{method:'POST',body:form}); const data=await r.json(); document.getElementById('formStatus').textContent=r.ok?'Курсант қосылды':(data.detail||'Қате'); if(r.ok){e.target.reset(); refresh();} });
+refresh();
+</script>
+</body>
+</html>

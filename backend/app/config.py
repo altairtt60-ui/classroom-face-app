@@ -6,9 +6,11 @@ PROJECT_ROOT = Path(__file__).resolve().parents[2]
 
 class Settings(BaseSettings):
     app_name: str = "Classroom Face App"
-    camera_index: int = 0
+    camera_source: str = "0"
+    camera_backend: str = "auto"
     camera_width: int = 2560
     camera_height: int = 1440
+    camera_fps: int = 15
     processing_width: int = 1280
     processing_height: int = 720
     processing_fps: int = 6
