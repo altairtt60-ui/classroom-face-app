@@ -20,7 +20,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 worker = CameraWorker()
-FRONTEND_INDEX = Path(__file__).resolve().parents[2] / "frontend" / "index.html"
+FRONTEND_INDEX = RESOURCE_ROOT / "frontend" / "index.html"
 
 
 @app.on_event("startup")
