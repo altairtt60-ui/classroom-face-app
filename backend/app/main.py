@@ -6,7 +6,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, StreamingResponse
 
 from .camera_sources import CameraSource, config_from_source
-from .config import settings
+from .config import RESOURCE_ROOT, settings
 from .database import create_cadet, delete_cadet, get_cadet, init_db, list_cadets
 from .enrollment import EnrollmentError, create_embedding, save_photo
 from .worker import CameraWorker
