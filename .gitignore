@@ -13,3 +13,6 @@ models/*
 .pytest_cache/
 node_modules/
 dist/
+build/
+*.spec
+ClassroomFaceApp-windows.zip
