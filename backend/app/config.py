@@ -1,7 +1,12 @@
+import sys
 from pathlib import Path
+
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
-PROJECT_ROOT = Path(__file__).resolve().parents[2]
+FROZEN = getattr(sys, "frozen", False)
+# Bundled read-only resources (frontend/) vs. writable user data (data/, .env, models/)
+RESOURCE_ROOT = Path(getattr(sys, "_MEIPASS", Path(__file__).resolve().parents[2]))
+PROJECT_ROOT = Path(sys.executable).parent if FROZEN else Path(__file__).resolve().parents[2]
 
 
 class Settings(BaseSettings):
@@ -19,7 +24,9 @@ class Settings(BaseSettings):
     data_dir: Path = PROJECT_ROOT / "data"
     model_dir: Path = PROJECT_ROOT / "models"
 
-    model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8", extra="ignore")
+    model_config = SettingsConfigDict(
+        env_file=str(PROJECT_ROOT / ".env"), env_file_encoding="utf-8", extra="ignore"
+    )
 
 
 settings = Settings()
