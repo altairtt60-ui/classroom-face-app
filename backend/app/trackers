@@ -1,0 +1,11 @@
+# Custom ByteTrack settings for a classroom camera: people sit still for long stretches, so a
+# long lost-track buffer keeps the same track ID (and therefore the same recognized name)
+# through occlusion instead of assigning a new ID (track_buffer is in tracker-update counts,
+# not raw camera frames, since we only feed it settings.processing_fps frames per second).
+tracker_type: bytetrack
+track_high_thresh: 0.25
+track_low_thresh: 0.1
+new_track_thresh: 0.3
+track_buffer: 150
+match_thresh: 0.8
+fuse_score: true
