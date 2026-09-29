@@ -1,48 +1,78 @@
 <!doctype html>
 <html lang="kk">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Classroom Face App</title>
-  <style>
-    :root { font-family: Inter, Arial, sans-serif; color: #e7edf5; background: #0c1420; }
-    body { margin: 0; } main { max-width: 1200px; margin: auto; padding: 24px; }
-    header { display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; }
-    .grid { display:grid; grid-template-columns: 2fr 1fr; gap:20px; }
-    .card { background:#142235; border:1px solid #263b54; border-radius:14px; padding:18px; }
-    img { width:100%; aspect-ratio:16/9; object-fit:contain; background:#08101b; border-radius:10px; }
-    input, button { width:100%; box-sizing:border-box; padding:11px; margin:6px 0; border-radius:8px; border:1px solid #3a526e; background:#0b1726; color:#fff; }
-    button { background:#2f80ed; border:0; cursor:pointer; font-weight:600; } button.secondary { background:#29435d; }
-    .row { display:flex; gap:8px; } .row > * { flex:1; }
-    .muted { color:#9eb1c7; font-size:13px; } .status { margin-top:10px; min-height:24px; }
-    li { margin:7px 0; color:#cdd9e7; }
-    @media(max-width:850px){ .grid{grid-template-columns:1fr;} }
-  </style>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Classroom Face App</title>
+<style>
+:root { font-family: Inter, Arial, sans-serif; color: #e7edf5; background: #0c1420; }
+body { margin: 0; } main { max-width: 1280px; margin: auto; padding: 24px; }
+header { display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; gap:12px; flex-wrap:wrap; }
+.grid { display:grid; grid-template-columns: 2fr 1fr; gap:20px; }
+.card { background:#142235; border:1px solid #263b54; border-radius:14px; padding:18px; margin-bottom:16px; }
+img#stream { width:100%; aspect-ratio:16/9; object-fit:contain; background:#08101b; border-radius:10px; }
+input, select, button { width:100%; box-sizing:border-box; padding:11px; margin:6px 0; border-radius:8px; border:1px solid #3a526e; background:#0b1726; color:#fff; font-size:14px; }
+button { background:#2f80ed; border:0; cursor:pointer; font-weight:600; }
+button.secondary { background:#29435d; } button.danger { background:#7a2f3f; }
+button:disabled { opacity:.5; cursor:not-allowed; }
+.row { display:flex; gap:8px; } .row > * { flex:1; }
+.muted { color:#9eb1c7; font-size:13px; } .status { margin-top:8px; min-height:20px; font-size:14px; }
+li { margin:8px 0; color:#cdd9e7; list-style:none; padding:8px; background:#0f1d2e; border-radius:8px; display:flex; justify-content:space-between; align-items:center; gap:8px; }
+.badge { font-size:11px; padding:2px 8px; border-radius:20px; }
+.badge.ok { background:#1c3d2c; color:#7be59a; } .badge.warn { background:#3d2c1c; color:#e5b87b; }
+.pick-box { text-align:center; padding:30px 10px; }
+.pick-name { font-size:28px; font-weight:700; margin:10px 0; min-height:38px; }
+@media(max-width:850px){ .grid{grid-template-columns:1fr;} }
+</style>
 </head>
 <body>
 <main>
-  <header><div><h1>Classroom Face App</h1><div class="muted">Камераға тәуелсіз локалды басқару панелі</div></div><button class="secondary" style="width:auto" onclick="refresh()">Жаңарту</button></header>
+  <header>
+    <div><h1 style="margin:0">Classroom Face App</h1><div class="muted">Камераға тәуелсіз локалды басқару панелі</div></div>
+    <button class="secondary" style="width:auto" onclick="refresh()">Тізімді жаңарту</button>
+  </header>
+
   <div class="grid">
-    <section class="card">
-      <h2>Live камера</h2>
-      <img id="stream" alt="Камера stream" />
-      <div class="row"><button onclick="startCamera()">Камераны іске қосу</button><button class="secondary" onclick="stopCamera()">Тоқтату</button></div>
-      <div id="cameraStatus" class="status muted">Күйі тексерілмеді</div>
-      <h3>Камера көзі</h3>
-      <p class="muted">0 — моноблок/USB; rtsp://... — IP; mp4 жолы — видео файл.</p>
-      <input id="source" value="0" placeholder="0 немесе rtsp://..." />
-      <button class="secondary" onclick="saveCamera()">Камера көзін сақтау</button>
+    <section>
+      <div class="card">
+        <h2 style="margin-top:0">Live камера</h2>
+        <img id="stream" alt="Камера stream" />
+        <div class="row">
+          <button onclick="startCamera()">Камераны іске қосу</button>
+          <button class="secondary" onclick="stopCamera()">Тоқтату</button>
+        </div>
+        <div id="cameraStatus" class="status muted">Күйі тексерілмеді</div>
+
+        <h3>Камера көзі</h3>
+        <select id="deviceSelect"><option value="">Камераларды іздеу...</option></select>
+        <p class="muted">Немесе IP камера/RTSP сілтемесін не видео файл жолын енгізіңіз:</p>
+        <input id="source" value="0" placeholder="0 немесе rtsp://user:pass@host/stream" />
+        <button class="secondary" onclick="saveCamera()">Камера көзін сақтау</button>
+      </div>
+
+      <div class="card pick-box">
+        <h2 style="margin-top:0">Кездейсоқ курсант таңдау</h2>
+        <div class="muted" id="pickProgress">—</div>
+        <div class="pick-name" id="pickName">—</div>
+        <div class="row">
+          <button onclick="pickRandom()">Курсант таңдау</button>
+          <button class="secondary" onclick="resetPicks()">Циклды жаңарту</button>
+        </div>
+        <p class="muted">Әр курсант циклда бір-ақ рет таңдалады. Барлығы таңдалғанда «Циклды жаңарту» басыңыз.</p>
+      </div>
     </section>
+
     <section class="card">
-      <h2>Курсант қосу</h2>
+      <h2 style="margin-top:0">Курсант қосу</h2>
       <form id="cadetForm">
         <input name="student_code" required placeholder="Курсант ID" />
         <input name="full_name" required placeholder="Аты-жөні" />
         <input name="group_name" placeholder="Тобы" />
         <input name="photo" required type="file" accept="image/jpeg,image/png,image/webp" />
-        <button>Фото және профиль қосу</button>
+        <button>Курсант қосу</button>
       </form>
       <div id="formStatus" class="status"></div>
+
       <h3>Тіркелген курсанттар</h3>
       <ul id="cadets"></ul>
     </section>
@@ -50,16 +80,87 @@
 </main>
 <script>
 const api = '/api';
+
 async function refresh(){
-  const [cadets, status] = await Promise.all([fetch(api+'/cadets').then(r=>r.json()), fetch(api+'/camera/status').then(r=>r.json())]);
-  document.getElementById('cadets').innerHTML = cadets.map(c=>`<li><b>${c.full_name}</b><br><span class="muted">${c.student_code} · ${c.group_name || 'Топ көрсетілмеген'}</span></li>`).join('') || '<li>Әзірге курсант жоқ</li>';
-  document.getElementById('cameraStatus').textContent = `running=${status.running}; tracks=${(status.tracks||[]).length}`;
+  const [cadetsRes, status, pick] = await Promise.all([
+    fetch(api+'/cadets').then(r=>r.json()),
+    fetch(api+'/camera/status').then(r=>r.json()),
+    fetch(api+'/pick/status').then(r=>r.json()),
+  ]);
+  document.getElementById('cadets').innerHTML = cadetsRes.map(c => `
+    <li>
+      <div><b>${c.full_name}</b><br><span class="muted">${c.student_code} · ${c.group_name || 'Топ жоқ'}</span></div>
+      <div style="display:flex;align-items:center;gap:6px">
+        <span class="badge ${c.recognition_ready ? 'ok' : 'warn'}">${c.recognition_ready ? 'фото бар' : 'фото жоқ'}</span>
+        <button class="danger" style="width:auto;padding:6px 10px" onclick="removeCadet(${c.id})">Өшіру</button>
+      </div>
+    </li>`).join('') || '<li>Әзірге курсант жоқ</li>';
+
+  const running = status.running;
+  document.getElementById('cameraStatus').textContent = running
+    ? `Жұмыс істеп тұр · ${status.camera_fps || 0} fps · трек саны: ${(status.tracks||[]).length}${status.error ? ' · ' + status.error : ''}`
+    : (status.error ? 'Қате: ' + status.error : 'Тоқтатылған');
+
+  document.getElementById('pickProgress').textContent = `Таңдалды: ${pick.picked}/${pick.total}`;
 }
-async function startCamera(){ await fetch(api+'/camera/start',{method:'POST'}); document.getElementById('stream').src=api+'/camera/stream?ts='+Date.now(); refresh(); }
+
+async function loadDevices(){
+  const select = document.getElementById('deviceSelect');
+  try {
+    const devices = await fetch(api+'/camera/devices').then(r=>r.json());
+    select.innerHTML = '<option value="">— тізімнен таңдаңыз —</option>' +
+      devices.map(d => `<option value="${d.index}">${d.label}</option>`).join('');
+  } catch(e) {
+    select.innerHTML = '<option value="">Камералар табылмады</option>';
+  }
+}
+document.getElementById('deviceSelect').addEventListener('change', (e) => {
+  if (e.target.value !== '') document.getElementById('source').value = e.target.value;
+});
+
+async function startCamera(){
+  document.getElementById('cameraStatus').textContent = 'Іске қосылып жатыр...';
+  const r = await fetch(api+'/camera/start', {method:'POST'});
+  if (!r.ok) { const d = await r.json(); document.getElementById('cameraStatus').textContent = 'Қате: ' + (d.detail||''); return; }
+  document.getElementById('stream').src = api+'/camera/stream?ts='+Date.now();
+  refresh();
+}
 async function stopCamera(){ await fetch(api+'/camera/stop',{method:'POST'}); document.getElementById('stream').removeAttribute('src'); refresh(); }
-async function saveCamera(){ const source=document.getElementById('source').value; await fetch(api+'/camera/config?source='+encodeURIComponent(source),{method:'POST'}); document.getElementById('formStatus').textContent='Камера көзі сақталды'; }
-document.getElementById('cadetForm').addEventListener('submit', async (e)=>{ e.preventDefault(); const form=new FormData(e.target); const r=await fetch(api+'/cadets',{method:'POST',body:form}); const data=await r.json(); document.getElementById('formStatus').textContent=r.ok?'Курсант қосылды':(data.detail||'Қате'); if(r.ok){e.target.reset(); refresh();} });
+async function saveCamera(){
+  const source = document.getElementById('source').value;
+  const r = await fetch(api+'/camera/config?source='+encodeURIComponent(source), {method:'POST'});
+  const d = await r.json();
+  document.getElementById('cameraStatus').textContent = r.ok ? 'Камера көзі сақталды, қайта іске қосыңыз' : ('Қате: ' + (d.detail||''));
+}
+
+async function pickRandom(){
+  const r = await fetch(api+'/pick/random', {method:'POST'});
+  const d = await r.json();
+  document.getElementById('pickName').textContent = r.ok ? d.full_name : (d.detail || 'Қате');
+  refresh();
+}
+async function resetPicks(){ await fetch(api+'/pick/reset', {method:'POST'}); document.getElementById('pickName').textContent = '—'; refresh(); }
+
+async function removeCadet(id){
+  if (!confirm('Курсантты өшіру керек пе?')) return;
+  await fetch(api+'/cadets/'+id, {method:'DELETE'});
+  refresh();
+}
+
+document.getElementById('cadetForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const form = new FormData(e.target);
+  const statusEl = document.getElementById('formStatus');
+  statusEl.textContent = 'Жіберілді, күтіңіз...';
+  const r = await fetch(api+'/cadets', {method:'POST', body:form});
+  const data = await r.json();
+  statusEl.textContent = r.ok ? 'Курсант қосылды' : (data.detail || 'Қате');
+  if (r.ok) { e.target.reset(); refresh(); }
+});
+
+loadDevices();
 refresh();
+setInterval(refresh, 5000);
 </script>
 </body>
 </html>
