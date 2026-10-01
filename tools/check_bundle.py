@@ -1,0 +1,80 @@
+"""Жиналған буманы тексереді: жұмыс кезінде ғана білінетін жетіспеген файлдарды ұстайды.
+
+Мұның себебі нақты: PyInstaller `torchvision`-ның туған кеңейтімін (`_C_stable.pyd`,
+`image_stable.pyd`, оның DLL-дері) жинамай кеткен, ал `classroom_bytetrack.yaml` қате
+атаумен (`trackers`) салынған. Екеуі де қатені үнсіз жұтып, камера көрінісінде бір де бір
+тіктөртбұрыш пен есім шықпай қалған.
+
+Қолданылуы:
+    python tools/check_bundle.py dist\\ClassroomFaceApp
+    python tools/check_bundle.py "C:\\Users\\User\\Downloads\\ClassroomFaceApp-windows\\ClassroomFaceApp"
+"""
+from __future__ import annotations
+
+import sys
+from pathlib import Path
+
+# Бума ішіндегі міндетті жолдар -> не үшін керек
+REQUIRED_FILES = {
+    "ClassroomFaceApp.exe": "қосымшаның іске қосылатын файлы",
+    "yolo11n.pt": "адам детекторының салмақтары",
+    "_internal/frontend/index.html": "басқару панелі",
+    "_internal/cv2/cv2.pyd": "OpenCV кеңейтімі",
+    "_internal/backend/app/trackers/classroom_bytetrack.yaml": "ByteTrack баптаулары (дәл осы атаумен)",
+}
+
+REQUIRED_GLOBS = {
+    "_internal/torchvision/_C*.pyd": "torchvision кеңейтімі (_C_stable.pyd)",
+    "_internal/torchvision/image_stable.pyd": "torchvision image кеңейтімі",
+    "_internal/torchvision/*.dll": "torchvision DLL-дері (libwebp, libpng16, zlib, jpeg8, libsharpyuv)",
+}
+
+# Ескерту ғана: бұл файлдар болмаса да қосымша істейді
+ADVISORY_GLOBS = {
+    "_internal/backend/app/trackers/trackers": "ескі, қате атаумен салынған трекер файлы (өшірген дұрыс)",
+    "_internal/cv2/_unicode_text.py": "OpenCV-ге қазақша мәтін қосатын патч (тек ескі жинақтарда керек)",
+}
+
+
+def check(bundle: Path) -> int:
+    print(f"Тексеріліп жатқан бума: {bundle}")
+    if not bundle.is_dir():
+        print(f"ҚАТЕ: бума табылмады: {bundle}")
+        return 2
+
+    problems: list[str] = []
+    for relative, why in REQUIRED_FILES.items():
+        if not (bundle / relative).is_file():
+            problems.append(f"жоқ: {relative}  ({why})")
+
+    for pattern, why in REQUIRED_GLOBS.items():
+        if not list(bundle.glob(pattern)):
+            problems.append(f"жоқ: {pattern}  ({why})")
+
+    for pattern, why in ADVISORY_GLOBS.items():
+        for stray in bundle.glob(pattern):
+            print(f"ескерту: {stray.relative_to(bundle)} бар — {why}")
+
+    if problems:
+        print("\nЖИНАҚ ТОЛЫҚ ЕМЕС:")
+        for problem in problems:
+            print("  -", problem)
+        print(
+            "\nТүзету: python tools/fix_bundle.py <бума жолы>\n"
+            "Немесе build_exe.bat арқылы қайта жинаңыз."
+        )
+        return 1
+
+    print("Жинақ толық: барлық міндетті файлдар орнында.")
+    return 0
+
+
+def main(argv: list[str]) -> int:
+    if len(argv) < 2:
+        print(__doc__)
+        return 2
+    return check(Path(argv[1]).expanduser().resolve())
+
+
+if __name__ == "__main__":
+    raise SystemExit(main(sys.argv))
