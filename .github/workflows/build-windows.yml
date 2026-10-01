@@ -19,6 +19,11 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r backend/requirements.txt pyinstaller
 
+      - name: Fetch detector weights
+        # The app downloads yolo11n.pt on its first run; fetching it here keeps the built
+        # bundle self-contained, so it also works on a machine without internet.
+        run: python -c "from ultralytics import YOLO; YOLO('yolo11n.pt')"
+
       - name: Build with PyInstaller
         shell: pwsh
         run: >
