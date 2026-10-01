@@ -9,3 +9,11 @@ ultralytics>=8.3,<9
 boxmot>=13,<14
 insightface>=0.7,<1
 onnxruntime>=1.18,<2
+Pillow>=10,<13
+
+# Ескертулер:
+# * Pillow — backend/app/overlay_text.py қазақша/кирилл есімдерді кадрға салу үшін керек
+#   (OpenCV 4.x-тің cv2.putText функциясы тек ASCII шрифтін біледі).
+# * torchvision ultralytics-пен бірге келеді. Ол tools/fix_bundle.py-ге build кезінде
+#   import етілуі керек: PyInstaller torchvision-ның туған кеңейтімін жинамайды, ал
+#   онсыз ultralytics-тің әр inference-ы қате береді (есімдер мен тіктөртбұрыштар жоғалады).
