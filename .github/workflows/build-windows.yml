@@ -8,6 +8,11 @@ on:
 jobs:
   build:
     runs-on: windows-latest
+    env:
+      # Windows жүгірткішінде Python шығысы cp1252 болады да, қазақша хабарларды
+      # басып шығару UnicodeEncodeError береді. tools/*.py өзін-өзі UTF-8-ге
+      # ауыстырады, бұл жол қосымша кепілдік (PyInstaller мен ultralytics үшін де).
+      PYTHONUTF8: "1"
     permissions:
       contents: write
     steps:
