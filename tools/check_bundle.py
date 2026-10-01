@@ -17,7 +17,6 @@ from pathlib import Path
 # Бума ішіндегі міндетті жолдар -> не үшін керек
 REQUIRED_FILES = {
     "ClassroomFaceApp.exe": "қосымшаның іске қосылатын файлы",
-    "yolo11n.pt": "адам детекторының салмақтары",
     "_internal/frontend/index.html": "басқару панелі",
     "_internal/cv2/cv2.pyd": "OpenCV кеңейтімі",
     "_internal/backend/app/trackers/classroom_bytetrack.yaml": "ByteTrack баптаулары (дәл осы атаумен)",
@@ -30,6 +29,15 @@ REQUIRED_GLOBS = {
 }
 
 # Ескерту ғана: бұл файлдар болмаса да қосымша істейді
+ADVISORY_FILES = {
+    "yolo11n.pt": (
+        "адам детекторының салмақтары. Онсыз қосымша оны бірінші іске қосылғанда "
+        "интернеттен жүктейді — интернеті жоқ компьютерде детекция істемейді. "
+        "Жинаққа қосу үшін yolo11n.pt файлын жоба түбіріне (немесе models/ ішіне) қойып, "
+        "tools/fix_bundle.py-ді қайта іске қосыңыз."
+    ),
+}
+
 ADVISORY_GLOBS = {
     "_internal/backend/app/trackers/trackers": "ескі, қате атаумен салынған трекер файлы (өшірген дұрыс)",
     "_internal/cv2/_unicode_text.py": "OpenCV-ге қазақша мәтін қосатын патч (тек ескі жинақтарда керек)",
@@ -50,6 +58,10 @@ def check(bundle: Path) -> int:
     for pattern, why in REQUIRED_GLOBS.items():
         if not list(bundle.glob(pattern)):
             problems.append(f"жоқ: {pattern}  ({why})")
+
+    for relative, why in ADVISORY_FILES.items():
+        if not (bundle / relative).is_file():
+            print(f"ескерту: {relative} жоқ — {why}")
 
     for pattern, why in ADVISORY_GLOBS.items():
         for stray in bundle.glob(pattern):
