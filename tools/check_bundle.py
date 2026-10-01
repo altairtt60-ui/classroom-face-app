@@ -14,6 +14,23 @@ from __future__ import annotations
 import sys
 from pathlib import Path
 
+
+def _use_utf8_output() -> None:
+    """Шығысты UTF-8 етеді.
+
+    GitHub Actions-тың Windows жүгірткішінде консоль кодтауы cp1252, ал нақты
+    компьютерде cp1251/cp866 болуы мүмкін: онда осы құралдың қазақша хабарлары
+    `UnicodeEncodeError` беріп, жинау қадамы құлайды (дәл осылай болған).
+    """
+    for stream in (sys.stdout, sys.stderr):
+        try:
+            stream.reconfigure(encoding="utf-8", errors="replace")  # type: ignore[attr-defined]
+        except Exception:
+            pass
+
+
+_use_utf8_output()
+
 # Бума ішіндегі міндетті жолдар -> не үшін керек
 REQUIRED_FILES = {
     "ClassroomFaceApp.exe": "қосымшаның іске қосылатын файлы",
