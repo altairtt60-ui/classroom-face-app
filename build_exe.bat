@@ -21,6 +21,14 @@ if not exist ".venv\Scripts\python.exe" (
 
 .venv\Scripts\python.exe -m pip install pyinstaller || goto :fail
 
+rem Детектор салмақтары: онсыз қосымша оны бірінші іске қосылғанда интернеттен жүктейді,
+rem ал интернеті жоқ компьютерде детекция мүлдем істемейді. Сондықтан жинақ кезінде
+rem бір рет жүктеп алып, бумаға қосамыз (оны tools\fix_bundle.py көшіреді).
+if exist "yolo11n.pt" goto :weights_ready
+echo [0/3] Детектор салмақтарын жүктеу: yolo11n.pt
+.venv\Scripts\python.exe -c "from ultralytics import YOLO; YOLO('yolo11n.pt')"
+:weights_ready
+
 echo.
 echo [1/3] PyInstaller жинағы (бірнеше минут алады)...
 .venv\Scripts\python.exe -m PyInstaller --noconfirm --onedir --name ClassroomFaceApp ^
