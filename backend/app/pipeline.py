@@ -7,6 +7,13 @@ Why this way and not "recognize every face every frame":
   away or is briefly hidden instantly "loses" their name. Voting + memory (identity_cache.py)
   means a name sticks with a track id, survives a few bad frames, and comes back on the
   SAME name if the tracker drops and re-acquires the person.
+
+Two hard-won lessons are baked into this file, because both of them once made the live view
+show a perfectly good camera picture with no boxes and no names:
+- the custom ByteTrack settings file must exist (see tracker_config(), which falls back to
+  the built-in tracker instead of raising on every frame);
+- the label is drawn with overlay_text.draw_label(), not cv2.putText(), because the Hershey
+  fonts cannot draw Kazakh/Cyrillic names.
 """
 from __future__ import annotations
 
@@ -19,9 +26,23 @@ import numpy as np
 from .config import RESOURCE_ROOT, settings
 from .face_engine import engine as face_engine
 from .identity_cache import TrackIdentityCache
+from .overlay_text import draw_label
 from .recognition import RecognitionService
 
-TRACKER_CONFIG = str(RESOURCE_ROOT / "backend" / "app" / "trackers" / "classroom_bytetrack.yaml")
+# Custom ByteTrack settings (long lost-track buffer, so a name survives someone being hidden
+# behind a neighbour) shipped next to the app; ultralytics' built-in config is the fallback.
+TRACKER_FILE = RESOURCE_ROOT / "backend" / "app" / "trackers" / "classroom_bytetrack.yaml"
+DEFAULT_TRACKER = "bytetrack.yaml"
+
+
+def tracker_config() -> str:
+    """Path to the custom tracker settings, or ultralytics' built-in one if it is missing.
+
+    Shipping the YAML under the wrong name used to make *every* model.track() call raise
+    FileNotFoundError; the error was swallowed and the stream therefore showed no detections
+    at all. Degrading to the built-in tracker keeps the app usable in that situation.
+    """
+    return str(TRACKER_FILE) if TRACKER_FILE.is_file() else DEFAULT_TRACKER
 
 
 @dataclass
@@ -81,7 +102,7 @@ class VisionPipeline:
             results = model.track(
                 source=frame,
                 persist=True,
-                tracker=TRACKER_CONFIG,
+                tracker=tracker_config(),
                 verbose=False,
                 conf=settings.yolo_conf,
                 classes=[0],
@@ -89,7 +110,9 @@ class VisionPipeline:
             )
             self.last_error = None
         except Exception as exc:
-            self.last_error = str(exc)
+            # worker.status() surfaces this to the panel, so a failure here is visible
+            # instead of silently producing an overlay without a single box.
+            self.last_error = f"{type(exc).__name__}: {exc}"
             return self._current_results()
 
         if not results or results[0].boxes is None or results[0].boxes.id is None:
@@ -168,5 +191,6 @@ class VisionPipeline:
             color = colors.get(track.status, (140, 140, 140))
             cv2.rectangle(output, (x1, y1), (x2, y2), color, 2)
             text = track.label if track.status == "recognized" else f"{track.label} (T{track.track_id})"
-            cv2.putText(output, text, (x1, max(24, y1 - 8)), cv2.FONT_HERSHEY_SIMPLEX, 0.6, color, 2)
+            # draw_label keeps Kazakh/Cyrillic names readable (cv2.putText cannot).
+            draw_label(output, text, (x1, max(24, y1 - 8)), color=color)
         return output
