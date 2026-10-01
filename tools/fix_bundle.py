@@ -28,6 +28,22 @@ sys.path.insert(0, str(PROJECT_ROOT / "tools"))
 
 import check_bundle  # noqa: E402  (қатар тұрған тексеру құралы)
 
+
+def _use_utf8_output() -> None:
+    """Шығысты UTF-8 етеді (GitHub Actions-тағы cp1252 консолі үшін).
+
+    Онсыз қазақша хабарларды басып шығару `UnicodeEncodeError` беріп, жинау
+    қадамы бір секундта құлайды — CI-де дәл солай болған.
+    """
+    for stream in (sys.stdout, sys.stderr):
+        try:
+            stream.reconfigure(encoding="utf-8", errors="replace")  # type: ignore[attr-defined]
+        except Exception:
+            pass
+
+
+_use_utf8_output()
+
 TORCHVISION_PATTERNS = ("_C*.pyd", "image*.pyd", "*.dll")
 TRACKER_SOURCE = PROJECT_ROOT / "backend" / "app" / "trackers" / "classroom_bytetrack.yaml"
 TRACKER_DEST = Path("_internal/backend/app/trackers/classroom_bytetrack.yaml")
