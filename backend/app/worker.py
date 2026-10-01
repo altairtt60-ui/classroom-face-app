@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import logging
 import threading
 import time
 from typing import Iterator
@@ -10,8 +11,12 @@ from .camera_sources import CameraSource, FrameGrabber, config_from_source
 from .config import settings
 from .pipeline import VisionPipeline
 
+logger = logging.getLogger(__name__)
+
 
 class CameraWorker:
+    """Owns the capture thread and the per-frame vision pipeline."""
+
     def __init__(self) -> None:
         self.source = CameraSource(self._config())
         self.grabber: FrameGrabber | None = None
@@ -22,6 +27,7 @@ class CameraWorker:
         self.thread: threading.Thread | None = None
         self.lock = threading.Lock()
         self.error: str | None = None
+        self._reported_pipeline_error: str | None = None
 
     @staticmethod
     def _config():
@@ -66,6 +72,15 @@ class CameraWorker:
         if self.thread and self.thread.is_alive():
             self.thread.join(timeout=3)
 
+    def _note_pipeline_error(self) -> None:
+        """Log a new pipeline failure once, so the console tells the same story as the panel."""
+        error = self.pipeline.last_error
+        if error and error != self._reported_pipeline_error:
+            self._reported_pipeline_error = error
+            logger.error("Vision pipeline error (кадрлар өңделмейді): %s", error)
+        elif not error:
+            self._reported_pipeline_error = None
+
     def _run(self) -> None:
         last_seq = -1
         target_width = settings.stream_max_width
@@ -81,6 +96,7 @@ class CameraWorker:
                     scale = target_width / frame.shape[1]
                     frame = cv2.resize(frame, (target_width, int(frame.shape[0] * scale)))
                 tracks = self.pipeline.process(frame)
+                self._note_pipeline_error()
                 rendered = self.pipeline.draw(frame, tracks)
                 ok, encoded = cv2.imencode(".jpg", rendered, [cv2.IMWRITE_JPEG_QUALITY, 80])
                 if ok:
@@ -103,9 +119,13 @@ class CameraWorker:
         with self.lock:
             tracks = list(self.latest_tracks)
         properties = self.source.actual_properties() if self.running else {}
+        # Vision failures (tracker/recognition) belong in "error" as well: the panel prints
+        # that field, and without it the user only saw "0 tracks" on a working picture.
+        pipeline_error = self.pipeline.last_error
         return {
             "running": self.running,
-            "error": self.error,
+            "error": self.error or pipeline_error,
+            "pipeline_error": pipeline_error,
             "camera_fps": round(self.grabber.measured_fps, 1) if self.grabber else 0,
             "properties": properties,
             "tracks": tracks,
